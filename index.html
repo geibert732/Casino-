@@ -3,38 +3,44 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Casino Pro Geibert</title>
+    <title>Casino Real Geibert</title>
     <style>
-        body { background: #000; color: #ffd700; text-align: center; font-family: sans-serif; }
-        .slot-container { border: 8px double #ffd700; padding: 15px; border-radius: 20px; background: #111; display: inline-block; margin-top: 20px; }
-        .rodillos { font-size: 60px; margin: 15px; background: #fff; color: #000; border-radius: 10px; padding: 10px; }
-        .controles { margin: 20px; }
-        input { width: 80px; padding: 10px; border-radius: 5px; border: none; font-weight: bold; text-align: center; }
-        button { background: linear-gradient(#ffd700, #b8860b); border: none; padding: 15px 30px; font-size: 20px; font-weight: bold; border-radius: 50px; cursor: pointer; color: black; }
+        body { background: #000; color: #ffd700; text-align: center; font-family: sans-serif; padding: 20px; }
+        .slot-container { border: 8px double #ffd700; padding: 20px; border-radius: 20px; background: #111; display: inline-block; }
+        .rodillos { font-size: 50px; margin: 20px; background: #fff; border-radius: 10px; padding: 10px; min-width: 200px; color: #000; }
+        input { width: 100px; padding: 10px; border-radius: 5px; border: none; text-align: center; font-size: 18px; margin-bottom: 10px; }
+        button { background: linear-gradient(#ffd700, #b8860b); border: none; padding: 15px 30px; font-size: 20px; font-weight: bold; border-radius: 50px; cursor: pointer; width: 100%; }
+        button:disabled { background: #555; color: #888; cursor: not-allowed; }
         #status { font-size: 18px; margin-top: 15px; font-weight: bold; }
     </style>
 </head>
 <body>
-    <h1>🎰 CASINO ELITE 🎰</h1>
+    <h1>🎰 CASINO ÉLITE 🎰</h1>
     <div class="slot-container">
-        <div id="display" class="rodillos">💰|💎|💰</div>
-        <div class="controles">
-            <p>Monto (10 - 5000 Bs):</p>
-            <input type="number" id="apuesta" value="100" min="10" max="5000">
-            <br><br>
-            <button onclick="spin()">¡GIRAR!</button>
-        </div>
+        <div id="display" class="rodillos">🎰|🎰|🎰</div>
+        <p>Monto a apostar (Bs):</p>
+        <input type="number" id="apuesta" value="10" min="10" max="5000">
+        <button id="btn-spin" onclick="spin()">¡GIRAR!</button>
     </div>
-    <p id="status">¡Suerte!</p>
+    <p id="status">Recarga saldo en el bot para jugar</p>
 
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script>
+        const tg = window.Telegram.WebApp;
+        tg.expand(); // Abre la app a pantalla completa
+
         function spin() {
-            let monto = document.getElementById('apuesta').value;
-            if(monto < 10 || monto > 5000) {
-                alert("Monto no permitido (Mín 10 - Máx 5000)");
+            const monto = document.getElementById('apuesta').value;
+            const status = document.getElementById('status');
+            const btn = document.getElementById('btn-spin');
+
+            if (monto < 10 || monto > 5000) {
+                alert("Monto permitido: 10 - 5000 Bs");
                 return;
             }
-            const iconos = ["🍒", "🍋", "🔔", "💎", "7️⃣", "💀"];
+
+            // SIMULACIÓN DE GIRO
+            const iconos = ["🍒", "🍋", "🔔", "💎", "7️⃣"];
             let r1 = iconos[Math.floor(Math.random() * iconos.length)];
             let r2 = iconos[Math.floor(Math.random() * iconos.length)];
             let r3 = iconos[Math.floor(Math.random() * iconos.length)];
@@ -42,14 +48,21 @@
             document.getElementById('display').innerText = `${r1}|${r2}|${r3}`;
             
             if(r1 === r2 && r2 === r3) {
-                document.getElementById('status').innerText = "¡GANASTE " + (monto * 10) + " Bs! 🎉";
-                document.getElementById('status').style.color = "lime";
+                status.innerText = "¡GANASTE! 🎉";
+                status.style.color = "lime";
+                // Aquí podrías enviar un mensaje al bot para sumar premio
             } else {
-                document.getElementById('status').innerText = "Perdiste " + monto + " Bs. Intenta de nuevo.";
-                document.getElementById('status').style.color = "red";
+                status.innerText = "Perdiste " + monto + " Bs";
+                status.style.color = "red";
+                
+                // ESTA ES LA MAGIA: Envía el resultado al Bot para que reste el saldo
+                tg.sendData(JSON.stringify({
+                    action: "apuesta_perdida",
+                    monto: monto
+                }));
             }
         }
     </script>
 </body>
-    </html>
+            </html>
     
