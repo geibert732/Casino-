@@ -3,102 +3,68 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Elite Gold Multi-Casino</title>
+    <title>Elite Gold Casino</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
-        body { background: #000; color: gold; font-family: 'Arial', sans-serif; text-align: center; margin: 0; padding: 10px; overflow: hidden; }
-        .casino-frame { border: 4px solid gold; border-radius: 20px; background: radial-gradient(circle, #222, #000); padding: 15px; height: 95vh; display: flex; flex-direction: column; justify-content: space-between; }
-        .menu-juegos { display: flex; justify-content: center; gap: 10px; margin-bottom: 10px; }
-        .btn-game { background: #222; border: 1px solid gold; color: gold; padding: 10px; border-radius: 10px; cursor: pointer; font-size: 12px; }
-        .display { font-size: 70px; margin: 15px; min-height: 100px; text-shadow: 0 0 20px gold; }
-        .btn-play { background: linear-gradient(#ffd700, #b8860b); color: black; border: none; padding: 18px; width: 90%; border-radius: 50px; font-size: 22px; font-weight: bold; cursor: pointer; }
-        .animar { animation: shake 0.1s infinite; }
+        body { background: #000; color: gold; font-family: sans-serif; text-align: center; margin: 0; overflow: hidden; }
+        .casino { border: 4px solid gold; border-radius: 20px; padding: 15px; height: 95vh; display: flex; flex-direction: column; justify-content: space-around; }
+        .games { display: flex; justify-content: center; gap: 10px; }
+        .game-btn { background: #222; border: 1px solid gold; color: gold; padding: 8px; border-radius: 10px; font-size: 12px; }
+        .active { background: gold; color: black; }
+        .display { font-size: 80px; min-height: 100px; text-shadow: 0 0 20px gold; }
+        .spin-btn { background: linear-gradient(#ffd700, #b8860b); color: #000; border: none; padding: 20px; width: 90%; border-radius: 50px; font-size: 24px; font-weight: bold; }
+        .anim { animation: shake 0.1s infinite; }
         @keyframes shake { 0% { transform: translate(1px, 1px); } 50% { transform: translate(-1px, -2px); } 100% { transform: translate(1px, 1px); } }
     </style>
 </head>
 <body>
-    <div class="casino-frame">
-        <h2 style="margin:0; font-size: 22px;">🎰 ELITE GOLD 🎰</h2>
-        
-        <button onclick="activarAudio()" style="background:none; border:1px solid gold; color:gold; padding:5px; border-radius:10px; font-size: 10px;">🔊 ACTIVAR MÚSICA</button>
-
-        <div class="menu-juegos">
-            <button class="btn-game" onclick="setGame('slots')">🎰 SLOTS</button>
-            <button class="btn-game" onclick="setGame('dados')">🎲 DADOS</button>
-            <button class="btn-game" onclick="setGame('moneda')">🪙 MONEDA</button>
+    <div class="casino">
+        <h2 style="margin:0;">👑 ELITE GOLD 👑</h2>
+        <button onclick="playMusic()" style="background:none; color:gold; border:1px solid gold; font-size:10px; border-radius:5px;">🔊 ACTIVAR MÚSICA</button>
+        <div class="games">
+            <button class="game-btn active" id="b1" onclick="setG('slots')">🎰 SLOTS</button>
+            <button class="game-btn" id="b2" onclick="setG('dados')">🎲 DADOS</button>
+            <button class="game-btn" id="b3" onclick="setG('moneda')">🪙 MONEDA</button>
         </div>
-
-        <div id="visual" class="display">🎰</div>
-        
+        <div id="viz" class="display">🎰</div>
         <div>
-            <p style="margin:0; font-size: 14px;">Apuesta (Bs):</p>
-            <input type="number" id="apuesta" value="10" style="width:50%; padding:8px; text-align:center; background:#111; color:white; border:1px solid gold; border-radius:10px;">
+            <p style="margin:0;">Apuesta (Bs):</p>
+            <input type="number" id="bet" value="10" style="width:50%; padding:10px; text-align:center; background:#111; color:#fff; border:1px solid gold; border-radius:10px;">
         </div>
-
-        <button class="btn-play" onclick="jugar()">¡APOSTAR!</button>
-        <p id="status" style="font-size: 14px; margin: 5px;"></p>
+        <button class="spin-btn" onclick="play()">¡APOSTAR!</button>
+        <p id="st" style="font-size:14px; margin:0;"></p>
     </div>
-
     <script>
-        const tg = window.Telegram.WebApp;
-        tg.expand();
-        let juegoActual = 'slots';
-
-        // AUDIOS
-        const musica = new Audio('https://www.soundjay.com/free-music/sounds/casino-lounge-1.mp3');
-        const s_giro = new Audio('https://www.soundjay.com/misc/sounds/bell-ringing-05.mp3');
-        const s_win = new Audio('https://www.soundjay.com/human/sounds/applause-01.mp3');
-        musica.loop = true;
-
-        function activarAudio() { musica.play().catch(() => {}); }
-        
-        function setGame(g) { 
-            juegoActual = g; 
-            const v = document.getElementById('visual');
-            if(g==='slots') v.innerText = '🎰';
-            if(g==='dados') v.innerText = '🎲';
-            if(g==='moneda') v.innerText = '🪙';
+        const tg = window.Telegram.WebApp; tg.expand();
+        let game = 'slots';
+        const m = new Audio('https://www.soundjay.com/free-music/sounds/casino-lounge-1.mp3'); m.loop = true;
+        const s1 = new Audio('https://www.soundjay.com/misc/sounds/bell-ringing-05.mp3');
+        const s2 = new Audio('https://www.soundjay.com/human/sounds/applause-01.mp3');
+        function playMusic() { m.play(); }
+        function setG(t) { 
+            game = t; document.querySelectorAll('.game-btn').forEach(b => b.classList.remove('active'));
+            if(t=='slots'){document.getElementById('b1').classList.add('active'); document.getElementById('viz').innerText='🎰';}
+            if(t=='dados'){document.getElementById('b2').classList.add('active'); document.getElementById('viz').innerText='🎲';}
+            if(t=='moneda'){document.getElementById('b3').classList.add('active'); document.getElementById('viz').innerText='🪙';}
         }
-
-        function jugar() {
-            const monto = document.getElementById('apuesta').value;
-            const visual = document.getElementById('visual');
-            const status = document.getElementById('status');
-
-            if (monto < 10) return;
-
-            // ANIMACIÓN Y SONIDO
-            visual.classList.add('animar');
-            s_giro.play();
-            status.innerText = "Girando...";
-
-            // Enviamos el dato al bot (Esto descontará el saldo en el fondo)
-            tg.sendData(JSON.stringify({monto: monto}));
-
+        function play() {
+            const amt = document.getElementById('bet').value;
+            const viz = document.getElementById('viz');
+            const st = document.getElementById('st');
+            if(amt < 10) return;
+            viz.classList.add('anim'); s1.play(); st.innerText = "Procesando...";
+            tg.sendData(JSON.stringify({monto: amt}));
             setTimeout(() => {
-                visual.classList.remove('animar');
-                let gano = Math.random() > 0.7;
-
-                if(juegoActual === 'slots') {
-                    const icons = ["🍒","💎","7️⃣","🔔"];
-                    visual.innerText = icons[Math.floor(Math.random()*4)] + icons[Math.floor(Math.random()*4)] + icons[Math.floor(Math.random()*4)];
-                } else if(juegoActual === 'dados') {
-                    visual.innerText = "🎲 " + (Math.floor(Math.random()*6)+1);
-                } else {
-                    visual.innerText = Math.random() > 0.5 ? "🪙 CARA" : "🪙 CRUZ";
-                }
-
-                if(gano) {
-                    status.innerText = "¡GANASTE! 🎉";
-                    status.style.color = "lime";
-                    s_win.play();
-                } else {
-                    status.innerText = "Perdiste " + monto + " Bs";
-                    status.style.color = "red";
-                }
+                viz.classList.remove('anim');
+                let win = Math.random() > 0.7;
+                if(game=='slots'){ const i=["🍒","💎","7️⃣","🔔"]; viz.innerText=i[Math.floor(Math.random()*4)]+i[Math.floor(Math.random()*4)]+i[Math.floor(Math.random()*4)]; }
+                else if(game=='dados'){ viz.innerText="🎲 "+(Math.floor(Math.random()*6)+1); }
+                else { viz.innerText=Math.random()>0.5?"🪙 CARA":"🪙 CRUZ"; }
+                if(win){ st.innerText="¡GANASTE! 🎉"; st.style.color="lime"; s2.play(); }
+                else { st.innerText="Perdiste "+amt+" Bs"; st.style.color="red"; }
             }, 1200);
         }
     </script>
 </body>
-    </html>
+            </html>
     
