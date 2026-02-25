@@ -3,87 +3,108 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Elite Gold Casino</title>
+    <title>Elite Multi-Casino</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
-        body { background: #050505; color: gold; font-family: 'Arial', sans-serif; text-align: center; margin: 0; padding: 10px; overflow: hidden; }
-        .casino-frame { border: 5px solid #d4af37; border-radius: 25px; padding: 20px; background: radial-gradient(circle, #1a1a1a 0%, #000 100%); box-shadow: 0 0 30px #d4af37; height: 90vh; display: flex; flex-direction: column; justify-content: space-around; }
-        .slot-machine { display: flex; justify-content: center; gap: 10px; perspective: 1000px; }
-        .reel { background: white; color: black; width: 80px; height: 120px; line-height: 120px; font-size: 60px; border-radius: 12px; border: 4px solid #444; box-shadow: inset 0 0 15px #000; }
-        .spinning { animation: blurAnim 0.1s infinite; }
-        @keyframes blurAnim { 0% { filter: blur(2px); transform: translateY(-2px); } 100% { filter: blur(5px); transform: translateY(2px); } }
-        input { width: 70%; padding: 15px; border-radius: 12px; border: 2px solid gold; background: #111; color: white; font-size: 24px; font-weight: bold; text-align: center; }
-        .btn-spin { background: linear-gradient(180deg, #ffd700 0%, #b8860b 100%); color: black; border: none; padding: 20px; width: 90%; border-radius: 50px; font-size: 26px; font-weight: bold; cursor: pointer; text-shadow: 1px 1px 2px rgba(255,255,255,0.5); }
-        #msg { font-size: 20px; font-weight: bold; text-transform: uppercase; min-height: 30px; text-shadow: 0 0 5px gold; }
+        body { background: #000; color: #ffd700; font-family: 'Arial', sans-serif; text-align: center; margin: 0; padding: 10px; }
+        .casino-container { border: 4px solid #ffd700; border-radius: 20px; background: #111; padding: 15px; min-height: 90vh; }
+        .menu-juegos { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; }
+        .card-juego { border: 2px solid gold; padding: 15px; border-radius: 15px; width: 80px; cursor: pointer; background: #222; }
+        .game-area { display: none; margin-top: 20px; }
+        .display-visual { font-size: 70px; margin: 20px; min-height: 100px; transition: 0.1s; }
+        .animar { animation: mov 0.1s infinite; }
+        @keyframes mov { 0% { transform: scale(1); } 50% { transform: scale(1.1); } 100% { transform: scale(1); } }
+        input { width: 150px; padding: 10px; border-radius: 10px; border: 1px solid gold; background: #000; color: #fff; font-size: 20px; margin: 10px; }
+        button { background: linear-gradient(#ffd700, #b8860b); color: #000; border: none; padding: 15px 30px; font-weight: bold; border-radius: 10px; width: 90%; font-size: 20px; }
     </style>
 </head>
 <body>
-    <div class="casino-frame">
-        <h1 style="margin:0; font-size: 28px;">👑 ELITE SLOTS 👑</h1>
-        <div class="slot-machine">
-            <div id="r1" class="reel">💎</div>
-            <div id="r2" class="reel">💎</div>
-            <div id="r3" class="reel">💎</div>
+    <div class="casino-container">
+        <h2>🎰 ELITE MULTI-CASINO 🎰</h2>
+        
+        <div id="lobby" class="menu-juegos">
+            <div class="card-juego" onclick="abrir('slots')">🎰<br>Slots</div>
+            <div class="card-juego" onclick="abrir('dados')">🎲<br>Dados</div>
+            <div class="card-juego" onclick="abrir('moneda')">🪙<br>Moneda</div>
         </div>
-        <div>
-            <p style="margin:5px;">APUESTA MÍNIMA: 10 Bs</p>
-            <input type="number" id="bet" value="10" min="10">
+
+        <div id="game-area" class="game-area">
+            <div id="visual" class="display-visual">❓</div>
+            <p>Apuesta (Bs):</p>
+            <input type="number" id="apuesta" value="10" min="10">
+            <button onclick="jugar()">¡APOSTAR!</button>
+            <p id="status"></p>
+            <button style="background: grey; margin-top: 20px;" onclick="volver()">🏠 VOLVER</button>
         </div>
-        <button class="btn-spin" onclick="runGame()">JUGAR / GIRAR</button>
-        <div id="msg">¡BUENA SUERTE!</div>
     </div>
 
     <script>
         const tg = window.Telegram.WebApp;
         tg.expand();
+        let juegoActual = '';
         
-        // Elementos de audio (Reemplazables con links directos de tus archivos si prefieres)
-        const audioSpin = new Audio('https://www.soundjay.com/misc/sounds/bell-ringing-05.mp3');
-        const audioWin = new Audio('https://www.soundjay.com/human/sounds/applause-01.mp3');
-        const audioError = new Audio('https://www.soundjay.com/button/sounds/button-10.mp3');
+        // SONIDOS
+        const s_spin = new Audio('https://www.soundjay.com/misc/sounds/bell-ringing-05.mp3');
+        const s_win = new Audio('https://www.soundjay.com/human/sounds/applause-01.mp3');
 
-        async function runGame() {
-            const betMonto = document.getElementById('bet').value;
-            const msg = document.getElementById('msg');
-            const reels = [document.getElementById('r1'), document.getElementById('r2'), document.getElementById('r3')];
+        function abrir(tipo) {
+            juegoActual = tipo;
+            document.getElementById('lobby').style.display = 'none';
+            document.getElementById('game-area').style.display = 'block';
+        }
 
-            if (betMonto < 10) return alert("Apuesta mínima 10 Bs");
+        function volver() {
+            document.getElementById('lobby').style.display = 'flex';
+            document.getElementById('game-area').style.display = 'none';
+        }
 
-            // INICIO DE ANIMACIÓN Y SONIDO
-            msg.innerText = "PROCESANDO...";
-            msg.style.color = "gold";
-            audioSpin.play();
-            reels.forEach(r => r.classList.add('spinning'));
+        function jugar() {
+            const monto = document.getElementById('apuesta').value;
+            const visual = document.getElementById('visual');
+            const status = document.getElementById('status');
 
-            // COMUNICACIÓN SILENCIOSA CON EL BOT (No cierra la ventana)
-            // IMPORTANTE: Esto le dice al bot que reste el saldo.
-            tg.sendData(JSON.stringify({monto: betMonto, action: 'spin'}));
+            if (monto < 10) return alert("Mínimo 10 Bs");
 
-            // SIMULACIÓN DE RESULTADO (1.8 segundos para dar emoción)
+            // MANDAR SEÑAL AL BOT PARA COBRAR (Esto descuenta la plata)
+            tg.sendData(JSON.stringify({monto: monto}));
+
+            // ANIMACIÓN Y SONIDO
+            s_spin.play();
+            visual.classList.add('animar');
+            status.innerText = "Procesando...";
+
             setTimeout(() => {
-                reels.forEach(r => r.classList.remove('spinning'));
-                const icons = ["🍒", "🍋", "🔔", "💎", "7️⃣", "⭐"];
-                const results = [
-                    icons[Math.floor(Math.random() * icons.length)],
-                    icons[Math.floor(Math.random() * icons.length)],
-                    icons[Math.floor(Math.random() * icons.length)]
-                ];
+                visual.classList.remove('animar');
+                let gano = false;
 
-                reels[0].innerText = results[0];
-                reels[1].innerText = results[1];
-                reels[2].innerText = results[2];
-
-                if (results[0] === results[1] && results[1] === results[2]) {
-                    msg.innerText = "¡PREMIO MAYOR! 🎉";
-                    msg.style.color = "#00ff00";
-                    audioWin.play();
+                if (juegoActual === 'slots') {
+                    const icons = ["🍒","💎","7️⃣","🔔"];
+                    let r1 = icons[Math.floor(Math.random()*4)];
+                    let r2 = icons[Math.floor(Math.random()*4)];
+                    let r3 = icons[Math.floor(Math.random()*4)];
+                    visual.innerText = r1+r2+r3;
+                    if(r1==r2 && r2==r3) gano = true;
+                } else if (juegoActual === 'dados') {
+                    let d = Math.floor(Math.random()*6)+1;
+                    visual.innerText = "🎲 " + d;
+                    if(d >= 5) gano = true;
                 } else {
-                    msg.innerText = "PERDISTE " + betMonto + " Bs";
-                    msg.style.color = "#ff4444";
+                    let m = Math.random() > 0.5 ? "🪙 CARA" : "🪙 CRUZ";
+                    visual.innerText = m;
+                    if(Math.random() > 0.6) gano = true;
                 }
-            }, 1800);
+
+                if (gano) {
+                    status.innerText = "¡GANASTE! 🎉";
+                    status.style.color = "lime";
+                    s_win.play();
+                } else {
+                    status.innerText = "PERDISTE -" + monto + " Bs";
+                    status.style.color = "red";
+                }
+            }, 1500);
         }
     </script>
 </body>
-            </html>
-                                                                      
+    </html>
+    
