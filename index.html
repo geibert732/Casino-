@@ -1,105 +1,69 @@
 <!DOCTYPE html>
-<html lang="es">
+<html>
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Casino Royal</title>
+    <title>Elite Coin Miner</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
-        body { background: #0a0a0a; color: #f1c40f; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; text-align: center; margin: 0; overflow: hidden; }
-        .app-container { height: 100vh; display: flex; flex-direction: column; justify-content: space-between; border: 5px solid #d4af37; box-sizing: border-box; background: radial-gradient(circle, #1a1a1a 0%, #000 100%); }
-        .header { background: #d4af37; color: #000; padding: 10px; font-weight: bold; font-size: 20px; box-shadow: 0 0 15px gold; }
-        .game-selector { display: flex; justify-content: space-around; padding: 10px; background: #222; }
-        .game-icon { font-size: 30px; cursor: pointer; opacity: 0.5; transition: 0.3s; }
-        .game-icon.active { opacity: 1; transform: scale(1.2); text-shadow: 0 0 10px gold; }
-        .main-display { font-size: 90px; height: 150px; display: flex; align-items: center; justify-content: center; }
-        .controls { padding: 20px; background: rgba(255,255,255,0.05); }
-        input { width: 120px; padding: 10px; font-size: 20px; border-radius: 10px; border: 2px solid #d4af37; background: #000; color: #fff; text-align: center; }
-        .btn-spin { background: linear-gradient(180deg, #f1c40f, #9c8100); color: #000; border: none; padding: 20px; width: 90%; border-radius: 50px; font-size: 24px; font-weight: bold; margin-top: 15px; box-shadow: 0 5px 15px rgba(0,0,0,0.5); }
-        .anim { animation: vibration 0.1s infinite; }
-        @keyframes vibration { 0% { transform: rotate(0deg); } 25% { transform: rotate(1deg); } 50% { transform: rotate(0deg); } 75% { transform: rotate(-1deg); } 100% { transform: rotate(0deg); } }
+        body { background: #000; color: #fff; font-family: 'Arial', sans-serif; text-align: center; margin: 0; overflow: hidden; user-select: none; }
+        .app { height: 100vh; display: flex; flex-direction: column; justify-content: space-around; background: radial-gradient(circle, #222 0%, #000 100%); }
+        .score { font-size: 3rem; font-weight: bold; color: #f1c40f; text-shadow: 0 0 20px rgba(241, 196, 15, 0.5); }
+        .coin-container { display: flex; justify-content: center; align-items: center; }
+        .coin { width: 250px; height: 250px; background: url('https://cdn-icons-png.flaticon.com/512/5968/5968382.png'); /* Moneda dorada */
+                background-size: cover; border-radius: 50%; box-shadow: 0 0 50px #d4af37; cursor: pointer; transition: transform 0.1s; }
+        .coin:active { transform: scale(0.95); }
+        .energy-bar { width: 80%; height: 20px; background: #333; margin: 0 auto; border-radius: 10px; overflow: hidden; border: 1px solid #555; }
+        .energy-fill { width: 100%; height: 100%; background: linear-gradient(90deg, #f1c40f, #e67e22); transition: width 0.3s; }
     </style>
 </head>
 <body>
-    <div class="app-container">
-        <div class="header">💎 ELITE ROYAL CASINO 💎</div>
+    <div class="app">
+        <div class="score" id="score">0</div>
         
-        <button onclick="activarSonido()" style="background:none; color:gold; border:1px solid gold; margin:5px; padding:5px; font-size:10px;">🔊 ACTIVAR MÚSICA</button>
-
-        <div class="game-selector">
-            <div id="i1" class="game-icon active" onclick="changeGame('slots')">🎰</div>
-            <div id="i2" class="game-icon" onclick="changeGame('dados')">🎲</div>
-            <div id="i3" class="game-icon" onclick="changeGame('moneda')">🪙</div>
+        <div class="coin-container">
+            <div class="coin" id="coin" onclick="tap()"></div>
         </div>
 
-        <div id="display" class="main-display">🎰</div>
-
-        <div class="controls">
-            <p style="margin:5px;">APUESTA (Bs):</p>
-            <input type="number" id="bet" value="10">
-            <button class="btn-spin" onclick="play()">¡JUGAR!</button>
-            <h3 id="result"></h3>
+        <div>
+            <p>⚡ ENERGÍA: <span id="e-text">1000</span>/1000</p>
+            <div class="energy-bar"><div class="energy-fill" id="e-fill"></div></div>
         </div>
+        
+        <p style="color: #555;">PRÓXIMAMENTE EL AIRDROP...</p>
     </div>
 
     <script>
-        const tg = window.Telegram.WebApp;
-        tg.expand();
-        let currentGame = 'slots';
+        const tg = window.Telegram.WebApp; tg.expand();
+        let coins = 0;
+        let energy = 1000;
+        const sfx = new Audio('https://www.soundjay.com/buttons/sounds/button-37.mp3');
 
-        const bgMusic = new Audio('https://www.soundjay.com/free-music/sounds/casino-lounge-1.mp3');
-        const spinSfx = new Audio('https://www.soundjay.com/misc/sounds/bell-ringing-05.mp3');
-        const winSfx = new Audio('https://www.soundjay.com/human/sounds/applause-01.mp3');
-        bgMusic.loop = true;
+        function tap() {
+            if (energy <= 0) return;
+            
+            coins += 1;
+            energy -= 1;
+            sfx.play();
+            
+            document.getElementById('score').innerText = coins;
+            document.getElementById('e-text').innerText = energy;
+            document.getElementById('e-fill').style.width = (energy / 10) + "%";
 
-        function activarSonido() { bgMusic.play(); }
-
-        function changeGame(type) {
-            currentGame = type;
-            document.querySelectorAll('.game-icon').forEach(i => i.classList.remove('active'));
-            if(type=='slots') { document.getElementById('i1').classList.add('active'); document.getElementById('display').innerText = '🎰'; }
-            if(type=='dados') { document.getElementById('i2').classList.add('active'); document.getElementById('display').innerText = '🎲'; }
-            if(type=='moneda') { document.getElementById('i3').classList.add('active'); document.getElementById('display').innerText = '🪙'; }
+            // Enviar datos al bot cada 10 clicks para no saturar
+            if (coins % 10 === 0) {
+                tg.sendData(JSON.stringify({clicks: 10}));
+            }
         }
 
-        function play() {
-            const bet = document.getElementById('bet').value;
-            const display = document.getElementById('display');
-            const result = document.getElementById('result');
-
-            if(bet < 10) return alert("Mínimo 10 Bs");
-
-            // MOVIMIENTO Y SONIDO
-            display.classList.add('anim');
-            spinSfx.play();
-            result.innerText = "SORTEANDO...";
-
-            // Comunicación con el Bot (Descuento de saldo)
-            tg.sendData(JSON.stringify({monto: bet}));
-
-            setTimeout(() => {
-                display.classList.remove('anim');
-                let won = Math.random() > 0.7;
-
-                if(currentGame === 'slots') {
-                    const sym = ["🍒","💎","7️⃣","🔔"];
-                    display.innerText = sym[Math.floor(Math.random()*4)] + sym[Math.floor(Math.random()*4)] + sym[Math.floor(Math.random()*4)];
-                } else if(currentGame === 'dados') {
-                    display.innerText = "🎲 " + (Math.floor(Math.random()*6)+1);
-                } else {
-                    display.innerText = Math.random() > 0.5 ? "🪙 CARA" : "🪙 CRUZ";
-                }
-
-                if(won) {
-                    result.innerText = "¡GANASTE! 🎉";
-                    result.style.color = "#2ecc71";
-                    winSfx.play();
-                } else {
-                    result.innerText = "PERDISTE";
-                    result.style.color = "#e74c3c";
-                }
-            }, 1500);
-        }
+        // Recuperar energía poco a poco
+        setInterval(() => {
+            if (energy < 1000) {
+                energy += 1;
+                document.getElementById('e-text').innerText = energy;
+                document.getElementById('e-fill').style.width = (energy / 10) + "%";
+            }
+        }, 1000);
     </script>
 </body>
 </html>
