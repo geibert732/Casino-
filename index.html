@@ -1,66 +1,105 @@
 <!DOCTYPE html>
-<html>
+<html lang="es">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Casino Gold</title>
+    <title>Casino Royal</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
-        body { background: #000; color: gold; font-family: sans-serif; text-align: center; margin: 0; }
-        .casino { border: 4px solid gold; border-radius: 20px; padding: 15px; height: 90vh; display: flex; flex-direction: column; justify-content: space-around; }
-        .games-menu { display: flex; justify-content: center; gap: 10px; }
-        .btn-g { background: #222; border: 1px solid gold; color: gold; padding: 10px; border-radius: 10px; font-size: 12px; }
-        .active { background: gold; color: black; }
-        .viz { font-size: 80px; min-height: 100px; text-shadow: 0 0 20px gold; }
-        .spin-btn { background: gold; color: #000; border: none; padding: 20px; width: 90%; border-radius: 50px; font-size: 24px; font-weight: bold; }
-        .anim { animation: shake 0.1s infinite; }
-        @keyframes shake { 0% { transform: translate(1px, 1px); } 50% { transform: translate(-1px, -2px); } 100% { transform: translate(1px, 1px); } }
+        body { background: #0a0a0a; color: #f1c40f; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; text-align: center; margin: 0; overflow: hidden; }
+        .app-container { height: 100vh; display: flex; flex-direction: column; justify-content: space-between; border: 5px solid #d4af37; box-sizing: border-box; background: radial-gradient(circle, #1a1a1a 0%, #000 100%); }
+        .header { background: #d4af37; color: #000; padding: 10px; font-weight: bold; font-size: 20px; box-shadow: 0 0 15px gold; }
+        .game-selector { display: flex; justify-content: space-around; padding: 10px; background: #222; }
+        .game-icon { font-size: 30px; cursor: pointer; opacity: 0.5; transition: 0.3s; }
+        .game-icon.active { opacity: 1; transform: scale(1.2); text-shadow: 0 0 10px gold; }
+        .main-display { font-size: 90px; height: 150px; display: flex; align-items: center; justify-content: center; }
+        .controls { padding: 20px; background: rgba(255,255,255,0.05); }
+        input { width: 120px; padding: 10px; font-size: 20px; border-radius: 10px; border: 2px solid #d4af37; background: #000; color: #fff; text-align: center; }
+        .btn-spin { background: linear-gradient(180deg, #f1c40f, #9c8100); color: #000; border: none; padding: 20px; width: 90%; border-radius: 50px; font-size: 24px; font-weight: bold; margin-top: 15px; box-shadow: 0 5px 15px rgba(0,0,0,0.5); }
+        .anim { animation: vibration 0.1s infinite; }
+        @keyframes vibration { 0% { transform: rotate(0deg); } 25% { transform: rotate(1deg); } 50% { transform: rotate(0deg); } 75% { transform: rotate(-1deg); } 100% { transform: rotate(0deg); } }
     </style>
 </head>
 <body>
-    <div class="casino">
-        <h2>👑 ELITE GOLD 👑</h2>
-        <button onclick="playM()" style="background:none; border:1px solid gold; color:gold; border-radius:5px; font-size:10px;">🔊 ACTIVAR MÚSICA</button>
-        <div class="games-menu">
-            <button class="btn-g active" id="b1" onclick="setG('slots')">🎰</button>
-            <button class="btn-g" id="b2" onclick="setG('dados')">🎲</button>
-            <button class="btn-g" id="b3" onclick="setG('moneda')">🪙</button>
+    <div class="app-container">
+        <div class="header">💎 ELITE ROYAL CASINO 💎</div>
+        
+        <button onclick="activarSonido()" style="background:none; color:gold; border:1px solid gold; margin:5px; padding:5px; font-size:10px;">🔊 ACTIVAR MÚSICA</button>
+
+        <div class="game-selector">
+            <div id="i1" class="game-icon active" onclick="changeGame('slots')">🎰</div>
+            <div id="i2" class="game-icon" onclick="changeGame('dados')">🎲</div>
+            <div id="i3" class="game-icon" onclick="changeGame('moneda')">🪙</div>
         </div>
-        <div id="viz" class="viz">🎰</div>
-        <input type="number" id="bet" value="10" style="width:50%; padding:10px; text-align:center; background:#111; color:white; border:1px solid gold; border-radius:10px;">
-        <button class="spin-btn" onclick="play()">¡APOSTAR!</button>
-        <p id="st"></p>
+
+        <div id="display" class="main-display">🎰</div>
+
+        <div class="controls">
+            <p style="margin:5px;">APUESTA (Bs):</p>
+            <input type="number" id="bet" value="10">
+            <button class="btn-spin" onclick="play()">¡JUGAR!</button>
+            <h3 id="result"></h3>
+        </div>
     </div>
+
     <script>
-        const tg = window.Telegram.WebApp; tg.expand();
-        let g = 'slots';
-        const m = new Audio('https://www.soundjay.com/free-music/sounds/casino-lounge-1.mp3'); m.loop = true;
-        const s1 = new Audio('https://www.soundjay.com/misc/sounds/bell-ringing-05.mp3');
-        const s2 = new Audio('https://www.soundjay.com/human/sounds/applause-01.mp3');
-        function playM() { m.play(); }
-        function setG(t) { 
-            g = t; document.querySelectorAll('.btn-g').forEach(b => b.classList.remove('active'));
-            if(t=='slots'){document.getElementById('b1').classList.add('active'); document.getElementById('viz').innerText='🎰';}
-            if(t=='dados'){document.getElementById('b2').classList.add('active'); document.getElementById('viz').innerText='🎲';}
-            if(t=='moneda'){document.getElementById('b3').classList.add('active'); document.getElementById('viz').innerText='🪙';}
+        const tg = window.Telegram.WebApp;
+        tg.expand();
+        let currentGame = 'slots';
+
+        const bgMusic = new Audio('https://www.soundjay.com/free-music/sounds/casino-lounge-1.mp3');
+        const spinSfx = new Audio('https://www.soundjay.com/misc/sounds/bell-ringing-05.mp3');
+        const winSfx = new Audio('https://www.soundjay.com/human/sounds/applause-01.mp3');
+        bgMusic.loop = true;
+
+        function activarSonido() { bgMusic.play(); }
+
+        function changeGame(type) {
+            currentGame = type;
+            document.querySelectorAll('.game-icon').forEach(i => i.classList.remove('active'));
+            if(type=='slots') { document.getElementById('i1').classList.add('active'); document.getElementById('display').innerText = '🎰'; }
+            if(type=='dados') { document.getElementById('i2').classList.add('active'); document.getElementById('display').innerText = '🎲'; }
+            if(type=='moneda') { document.getElementById('i3').classList.add('active'); document.getElementById('display').innerText = '🪙'; }
         }
+
         function play() {
-            const amt = document.getElementById('bet').value;
-            const v = document.getElementById('viz');
-            if(amt < 10) return;
-            v.classList.add('anim'); s1.play();
-            tg.sendData(JSON.stringify({monto: amt}));
+            const bet = document.getElementById('bet').value;
+            const display = document.getElementById('display');
+            const result = document.getElementById('result');
+
+            if(bet < 10) return alert("Mínimo 10 Bs");
+
+            // MOVIMIENTO Y SONIDO
+            display.classList.add('anim');
+            spinSfx.play();
+            result.innerText = "SORTEANDO...";
+
+            // Comunicación con el Bot (Descuento de saldo)
+            tg.sendData(JSON.stringify({monto: bet}));
+
             setTimeout(() => {
-                v.classList.remove('anim');
-                let win = Math.random() > 0.7;
-                if(g=='slots'){ const i=["🍒","💎","7️⃣","🔔"]; v.innerText=i[Math.floor(Math.random()*4)]+i[Math.floor(Math.random()*4)]+i[Math.floor(Math.random()*4)]; }
-                else if(g=='dados'){ v.innerText="🎲 "+(Math.floor(Math.random()*6)+1); }
-                else { v.innerText=Math.random()>0.5?"🪙 CARA":"🪙 CRUZ"; }
-                if(win){ document.getElementById('st').innerText="¡GANASTE! 🎉"; s2.play(); }
-                else { document.getElementById('st').innerText="PERDISTE"; }
-            }, 1200);
+                display.classList.remove('anim');
+                let won = Math.random() > 0.7;
+
+                if(currentGame === 'slots') {
+                    const sym = ["🍒","💎","7️⃣","🔔"];
+                    display.innerText = sym[Math.floor(Math.random()*4)] + sym[Math.floor(Math.random()*4)] + sym[Math.floor(Math.random()*4)];
+                } else if(currentGame === 'dados') {
+                    display.innerText = "🎲 " + (Math.floor(Math.random()*6)+1);
+                } else {
+                    display.innerText = Math.random() > 0.5 ? "🪙 CARA" : "🪙 CRUZ";
+                }
+
+                if(won) {
+                    result.innerText = "¡GANASTE! 🎉";
+                    result.style.color = "#2ecc71";
+                    winSfx.play();
+                } else {
+                    result.innerText = "PERDISTE";
+                    result.style.color = "#e74c3c";
+                }
+            }, 1500);
         }
     </script>
 </body>
-            </html>
-    
+</html>
